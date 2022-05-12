@@ -1,0 +1,48 @@
+
+from PySide2.QtCore import *
+class MyItem(QObject):
+
+    nameChanged = Signal()
+
+    def __init__(self, name, parent=None):
+        QObject.__init__(self, parent)
+        self._name = name
+
+    @Property('QString', notify=nameChanged)
+    def name(self):
+        return self._name
+
+
+class MyModel(QAbstractListModel):
+    ObjectRole = Qt.UserRole + 1 # We always want a way to access the underlying object
+    NameRole = Qt.UserRole + 2
+    _roles = {
+        NameRole: b"name",
+        ObjectRole: b"object",
+    }
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._items = [MyItem('one', self), MyItem('two', self), MyItem('three', self)]
+
+    def roleNames(self):
+        _roles = super().roleNames()
+        _roles.update(self._roles)
+        return _roles
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self._items)
+
+    def data(self, index, role=Qt.DisplayRole):
+        try:
+            item = self._items[index.row()]
+        except IndexError:
+            return Qt.DisplayRole()
+
+        if   role == self.NameRole:
+            return item.name
+        elif role == self.ObjectRole:
+            return item
+
+        return Qt.DisplayRole()
+
